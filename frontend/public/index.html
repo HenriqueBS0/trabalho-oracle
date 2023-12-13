@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imagens</title>
+    <!-- Adiciona o link para o Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <!-- Adiciona o link para o FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        #imageContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .imageCard {
+            border: 1px solid #ddd;
+            padding: 10px;
+            position: relative;
+            text-align: center;
+            max-width: 200px;
+        }
+
+        .deleteIcon {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            cursor: pointer;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container formContainer">
+
+        <form id="imageForm">
+            <div class="form-group">
+                <label for="titulo">Título</label>
+                <input type="text" class="form-control" id="titulo" placeholder="Título" required>
+            </div>
+            <div class="form-group">
+                <label for="imagem">Escolha uma imagem</label>
+                <input type="file" class="form-control-file" id="imagem" accept="image/*" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+
+
+        <div id="imageContainer" class="d-flex justify-content-start"></div>
+    </div>
+
+
+    <!-- Adiciona os scripts do Bootstrap (JQuery e Popper.js) -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <!-- Adiciona o script do Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const imageContainer = document.getElementById('imageContainer');
+            const imageForm = document.getElementById('imageForm');
+
+            // Função para carregar as imagens cadastradas
+            const loadImages = async () => {
+                const response = await fetch('http://localhost:3000/');
+                const images = await response.json();
+
+                imageContainer.innerHTML = ''; // Limpa o conteúdo atual
+
+                images.forEach(image => {
+                    const imageCard = document.createElement('div');
+                    imageCard.className = 'imageCard card';
+
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64, ${image.arquivo}`;
+                    img.alt = image.titulo;
+                    img.className = 'card-img-top';
+
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body';
+
+                    const title = document.createElement('h5');
+                    title.className = 'card-title';
+                    title.textContent = image.titulo;
+
+                    const deleteIcon = document.createElement('i');
+                    deleteIcon.className = 'fas fa-trash-alt deleteIcon'; // Ícone de lixeira do FontAwesome
+                    deleteIcon.addEventListener('click', async () => {
+                        // Excluir a imagem no backend
+                        await fetch(`http://localhost:3000/${image.id}`, { method: 'DELETE' });
+
+                        // Recarregar as imagens após a exclusão
+                        loadImages();
+                    });
+
+                    cardBody.appendChild(title);
+                    imageCard.appendChild(img);
+                    imageCard.appendChild(cardBody);
+                    imageCard.appendChild(deleteIcon);
+                    imageContainer.appendChild(imageCard);
+                });
+            };
+
+            // Carregar imagens ao carregar a página
+            loadImages();
+
+            // Enviar imagem ao backend ao enviar o formulário
+            imageForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const titulo = document.getElementById('titulo').value;
+                const imagem = document.getElementById('imagem').files[0];
+
+                const formData = new FormData();
+                formData.append('titulo', titulo);
+                formData.append('imagem', imagem);
+
+                await fetch('http://localhost:3000/', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                // Limpar o formulário após o envio
+                imageForm.reset();
+
+                // Recarregar as imagens após o envio do formulário
+                loadImages();
+            });
+        });
+    </script>
+
+</body>
+
+</html>
